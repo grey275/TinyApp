@@ -8,6 +8,7 @@
   <title>TinyApp</title>
 </head>
 <body style="font-size:20px; padding:50px;">
+  <a href=<%=shortenUrlRoute%>>Click here to add a new url!</a>
   <% include ./partials/_header %>
   <ul>
     <% for (let key in urls) {%>
@@ -15,6 +16,5 @@
   <% } %>
   </ul>
 
-  <a href=<%=shortenUrlRoute%>>Click here to shorten your url!</a>
 </body>
 </html>
