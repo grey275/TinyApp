@@ -3,8 +3,8 @@ const bodyParser = require('body-parser');
 
 const generateRandomString = require('./random_string');
 
-var app = express();
-var PORT = 8080; // default port 8080
+const app = express();
+const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
 
@@ -13,19 +13,18 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 const config = {
   key_length: 6,
+  domain_name: 'localhost:8080',
 }
 
 
-var urlDatabase = {
+const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-const shortenUrlRoute = "/shorten"
-
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/urls");
 });
 
 app.get("/urls/new", (req, res) => {
@@ -42,9 +41,17 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get('/urls', (req, res) => {
   const templateVars = {
-    urls: urlDatabase, shortenUrlRoute};
+    urls: urlDatabase,
+    shortenUrlRoute: '/urls/new',
+    domain_name: config.domain_name,
+  };
   res.render('urls_index', templateVars);
 });
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
+})
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -61,5 +68,5 @@ app.post("/urls", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Listening on port ${PORT}!`);
 });

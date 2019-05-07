@@ -11,8 +11,12 @@
   <a href=<%=shortenUrlRoute%>>Click here to add a new url!</a>
   <% include ./partials/_header %>
   <ul>
-    <% for (let key in urls) {%>
-      <li> <%= `key: ${key}, url: ${urls[key]}` %></li>
+    <% for (let key in urls) {
+      const shortURL = `${domain_name}/u/${key}`;
+      const longURL = urls[key] %>
+      <li>
+        <%- include('./partials/_link_pair.ejs', {shortURL, longURL}) %>
+      </li>
   <% } %>
   </ul>
 
