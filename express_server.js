@@ -9,12 +9,15 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const shortenUrlRoute = "/shorten"
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    urls: urlDatabase, shortenUrlRoute};
   res.render('urls_index', templateVars);
 });
 
