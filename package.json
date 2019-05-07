@@ -12,6 +12,7 @@
   "dependencies": {
     "body-parser": "^1.19.0",
     "ejs": "^2.6.1",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "randexp": "^0.5.3"
   }
 }

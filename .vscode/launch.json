@@ -9,7 +9,7 @@
       "request": "launch",
       "port": 9229,
       "name": "Launch Program",
-      "program": "${workspaceFolder}/express_server.js"
+      "program": "${workspaceFolder}/randomString.js"
     }
   ]
 }
