@@ -57,7 +57,7 @@ app.get("/hello", (req, res) => {
 app.post("/urls", (req, res) => {
   const key = generateRandomString(config.key_length);
   urlDatabase[key] = req.body.longURL;
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  res.redirect(`urls/${key}`);
 });
 
 app.listen(PORT, () => {
