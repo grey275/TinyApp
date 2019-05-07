@@ -1,8 +1,12 @@
-var express = require("express");
+const express = require("express");
+const bodyParser = require('body-parser');
 var app = express();
 var PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
+
+console.log(bodyParser);
+app.use(bodyParser.urlencoded({extended: true}));
 
 var urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -15,6 +19,9 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL
