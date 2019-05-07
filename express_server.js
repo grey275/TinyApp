@@ -1,5 +1,8 @@
 const express = require("express");
 const bodyParser = require('body-parser');
+
+const generateRandomString = require('./random_string');
+
 var app = express();
 var PORT = 8080; // default port 8080
 
@@ -7,6 +10,10 @@ app.set('view engine', 'ejs');
 
 console.log(bodyParser);
 app.use(bodyParser.urlencoded({extended: true}));
+
+const config = {
+  key_length: 6,
+}
 
 
 var urlDatabase = {
@@ -48,7 +55,8 @@ app.get("/hello", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
+  const key = generateRandomString(config.key_length);
+  urlDatabase[key] = req.body.longURL;
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
