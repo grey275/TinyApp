@@ -71,6 +71,7 @@ app.get('/urls', (req, res) => {
     shortenUrlRoute: '/urls/new',
     username: req.cookies.username
   };
+  console.log('username', templateVars.username);
   res.render('urls_index', templateVars);
 });
 
