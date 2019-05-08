@@ -16,7 +16,7 @@
         <%- include('./partials/_link_pair.ejs', {shortURL, longURL}) %>
         -
         <form method="POST" action=<%= `/urls/${id}/delete` %>>
-          <button type="submit" class="btn btn-primary">Delete</button>
+          <button type="delete" class="btn btn-primary">Delete</button>
         </form>
         <form method= "GET" action=<%= `/urls/${id}` %>>
           <button type="submit" class="btn btn-primary">Edit</button>
