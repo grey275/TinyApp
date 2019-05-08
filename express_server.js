@@ -1,6 +1,8 @@
 const express = require("express");
 const bodyParser = require('body-parser');
 const methodOverride = require('method-override')
+const cookieParser = require('cookie-parser');
+
 const morgan = require('morgan');
 
 const generateRandomString = require('./random_string');
@@ -10,6 +12,7 @@ const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
 
+app.use(cookieParser());
 app.use(morgan('tiny'));
 app.use(methodOverride());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -46,11 +49,17 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  templateVars = {
+    username: req.cookies.username,
+  }
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars  = getUrlPair(req.params.shortURL);
+  const templateVars  = {
+    ...getUrlPair(req.params.shortURL),
+    username: req.cookies.username,
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -60,6 +69,7 @@ app.get('/urls', (req, res) => {
   const templateVars = {
     urlPairs,
     shortenUrlRoute: '/urls/new',
+    username: req.cookies.username
   };
   res.render('urls_index', templateVars);
 });
@@ -77,10 +87,6 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.post("/urls", (req, res) => {
@@ -102,12 +108,14 @@ app.post('/urls/:shortURL', (req, res) => {
   console.log(`modifying ${id}`);
 })
 
-app.get('/lmao', (req, res) => {
-  console.log(`it worked: `);
-  res.status(404).send('hi');
+app.post('/login', (req, res) => {
+  console.log(`username: ${req.body.username}`);
+  console.log(`cookies: `, req.cookies);
+  res.cookie('username', req.body.username);
+  res.redirect('/urls');
 });
 
-app.use(function (req, res, next) {
+app.get(function (req, res, next) {
   res.status(404).send('Something broke!')
 })
 

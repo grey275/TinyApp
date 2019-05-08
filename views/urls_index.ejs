@@ -8,8 +8,8 @@
   <title>TinyApp</title>
 </head>
 <body style="font-size:20px; padding:50px;">
+  <%- include('./partials/_header.ejs', {username}) %>
   <a href=<%=shortenUrlRoute%>>Click here to add a new url!</a>
-  <% include ./partials/_header %>
   <ul>
     <% for (let {longURL, shortURL, id} of urlPairs) { %>
       <li>

@@ -1,1 +1,11 @@
 <h1>TinyApp</h1>
+<form class="form-inline" action="/login" method="POST">
+  <div class="form-group mb-2">
+    <label for="longURL">Give yourself a username:</label>
+    <input class="form-control" type="text" name="username" placeholder="john doe" style="width: 300px; margin: 1em">
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </div>
+</form>
+<span>
+  Signed in as <%= username %>
+</span>
