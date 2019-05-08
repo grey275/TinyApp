@@ -8,7 +8,6 @@ const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
 
-console.log(bodyParser);
 app.use(bodyParser.urlencoded({extended: true}));
 
 const config = {
@@ -23,6 +22,18 @@ const urlDatabase = {
 };
 
 
+const getUrlPairs = () => (
+  Object.keys(urlDatabase).map(getUrlPair)
+);
+
+
+const getUrlPair = key => {
+  const longURL = urlDatabase[key];
+  const shortURL = `${config.domain_name}/u/${key}`;
+  return {longURL, shortURL};
+};
+
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -32,24 +43,23 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL
-  const longURL = urlDatabase[shortURL]
-  const templateVars = { shortURL, longURL, };
+  const templateVars  = getUrlPair(req.params.shortURL);
   res.render("urls_show", templateVars);
 });
 
 
 app.get('/urls', (req, res) => {
+  const urlPairs = getUrlPairs();
   const templateVars = {
-    urls: urlDatabase,
+    urlPairs,
     shortenUrlRoute: '/urls/new',
-    domain_name: config.domain_name,
   };
   res.render('urls_index', templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
+  console.log(`longURL: ${longURL}`);
   res.redirect(longURL);
 })
 
