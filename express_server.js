@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require('body-parser');
 const methodOverride = require('method-override')
+const morgan = require('morgan');
 
 const generateRandomString = require('./random_string');
 
@@ -9,6 +10,7 @@ const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
 
+app.use(morgan('tiny'));
 app.use(methodOverride());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
