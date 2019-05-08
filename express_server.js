@@ -97,6 +97,11 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect('/urls');
 })
 
+app.post('/urls/:shortURL', (req, res) => {
+  const id = req.params.shortURL;
+  console.log(`modifying ${id}`);
+})
+
 app.get('/lmao', (req, res) => {
   console.log(`it worked: `);
   res.status(404).send('hi');

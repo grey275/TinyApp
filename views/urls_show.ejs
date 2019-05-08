@@ -9,6 +9,14 @@
   </head>
   <body style="font-size:20px; padding:50px;">
     <% include ./partials/_header %>
-    <%- include('./partials/_link_pair', { longURL, shortURL }) %>
+    <%- include('./partials/_link_pair', { longURL, shortURL, id }) %>
+
+    <form class="form-inline" action="/urls/<%= id %>" method="POST">
+      <div class="form-group mb-2">
+        <label for="longURL">Edit url: </label>
+        <input class="form-control" type="text" name="longURL" placeholder="http://" style="width: 300px; margin: 1em">
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+    </form>
   </body>
 </html>
