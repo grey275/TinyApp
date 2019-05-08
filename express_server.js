@@ -116,6 +116,14 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
+app.post('/logout', (req, res) => {
+  console.log(`username: ${req.body.username}`);
+  console.log(`cookies: `, req.cookies);
+  res.clearCookie('username');
+  res.redirect('/urls');
+});
+
+
 app.get(function (req, res, next) {
   res.status(404).send('Something broke!')
 })
