@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require('body-parser');
+const methodOverride = require('method-override')
 
 const generateRandomString = require('./random_string');
 
@@ -8,9 +9,12 @@ const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
 
+app.use(methodOverride());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 
 const config = {
+  not_found_msg: 'sorry, that page doesn\'t exist!',
   key_length: 6,
   domain_name: 'localhost:8080',
 }
@@ -58,10 +62,15 @@ app.get('/urls', (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
+  console.log(`shortURL: ${req.params.shortURL}` );
   const longURL = urlDatabase[req.params.shortURL];
-  console.log(`longURL: ${longURL}`);
-  res.redirect(longURL);
+  if (!longURL) {
+    res.status(404).send(config.not_found_msg);
+    return
+  }
+  res.status(longURL);
 })
+
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -74,8 +83,25 @@ app.get("/hello", (req, res) => {
 app.post("/urls", (req, res) => {
   const key = generateRandomString(config.key_length);
   urlDatabase[key] = req.body.longURL;
+  console.log(`added ${req.body.longURL} to database as ${key}`)
   res.redirect(`urls/${key}`);
 });
+
+app.post('/urls/:shortURL/delete', (req, res) => {
+  const id = req.params.shortURL;
+  delete urlDatabase[id];
+  res.redirect('/urls');
+})
+
+app.get('/lmao', (req, res) => {
+  console.log(`it worked: `);
+  res.status(404).send('hi');
+});
+
+app.use(function (req, res, next) {
+  res.status(404).send('Something broke!')
+})
+
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}!`);

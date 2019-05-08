@@ -14,9 +14,12 @@
     <% for (let {longURL, shortURL} of urlPairs) { %>
       <li>
         <%- include('./partials/_link_pair.ejs', {shortURL, longURL}) %>
+        -
+        <form method="POST" action=<%=`/urls/${shortURL}/delete`%>/></form>
       </li>
   <% } %>
   </ul>
+
 
 </body>
 </html>
