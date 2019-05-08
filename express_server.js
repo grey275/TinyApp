@@ -36,7 +36,8 @@ const getUrlPairs = () => (
 const getUrlPair = key => {
   const longURL = urlDatabase[key];
   const shortURL = `${config.domain_name}/u/${key}`;
-  return {longURL, shortURL};
+  console.log(`key: ${key}`)
+  return {longURL, shortURL, id: key};
 };
 
 
@@ -91,6 +92,7 @@ app.post("/urls", (req, res) => {
 
 app.post('/urls/:shortURL/delete', (req, res) => {
   const id = req.params.shortURL;
+  console.log(`deleting ${id}`);
   delete urlDatabase[id];
   res.redirect('/urls');
 })
