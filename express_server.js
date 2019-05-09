@@ -77,10 +77,12 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get('/urls', (req, res) => {
   const urlPairs = getUrlPairs();
+  const user = users[req.cookies.user_id];
+  console.log('user: ', user);
   const templateVars = {
     urlPairs,
     shortenUrlRoute: '/urls/new',
-    user: users[req.cookies.user_id],
+    user,
   };
 
   res.render('urls_index', templateVars);
@@ -130,9 +132,17 @@ app.post('/urls/:shortURL', (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-  console.log(`username: ${req.body.username}`);
-  console.log(`cookies: `, req.cookies);
-  res.cookie('username', req.body.username);
+  console.log(`cookies on login: `, req.cookies);
+
+  const { email, password } = req.body;
+
+  const user = login(email, password)
+  console.log('user: ', user);
+  if (!user) {
+    res.status(403).send();
+    return;
+  }
+  res.cookie('user_id', user.id);
   res.redirect('/urls');
 });
 
@@ -150,9 +160,7 @@ app.post('/register', (req, res) => {
   const filledOut = !(email && password)
 
   // checking for a collision
-  const registeredAlready = Object.values(users).filter(user => (
-    user.email === email
-  ));
+  const registeredAlready = Boolean(findUserWithEmail(email));
 
   // just return 400 for either
   if (filledOut || registeredAlready) {
@@ -171,12 +179,28 @@ app.use(function (req, res, next) {
   res.status(404).send('Something broke!')
 })
 
-const checkIfRegistered = (email, users=users) => (
-  Object.values(users).filter(user => (
-    user.email === email
-  ))
-);
+const findUserWithEmail = (email, users) => {
+  for (let id in users) {
+    const user = users[id];
+    if (user.email = email) {
+      return user;
+    }
+  }
+  return false;
+};
 
+/* check if credentials are good,
+and if they are return the user obj */
+const login = (email, password) => {
+  console.log('email: ', email, 'password: ', password);
+  console.log('users in login', users);
+  const user = findUserWithEmail(email, users);
+  console.log('found user: ', user);
+  if (!user || user.password !== password) {
+    return false;
+  }
+  return user;
+}
 
 app.listen(config.port, () => {
   console.log(`Listening on port ${config.port}!`);
