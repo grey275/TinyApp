@@ -26,8 +26,8 @@ const config = {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 const users = {
@@ -50,7 +50,7 @@ const getUrlPairs = () => (
 
 
 const getUrlPair = key => {
-  const longURL = urlDatabase[key];
+  const longURL = urlDatabase[key].longURL;
   const shortURL = `${config.domain_name}/u/${key}`;
   console.log(`key: ${key}`)
   return {longURL, shortURL, id: key};
@@ -90,7 +90,7 @@ app.get('/urls', (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   console.log(`shortURL: ${req.params.shortURL}` );
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   if (!longURL) {
     res.status(404).send(config.not_found_msg);
     return;
@@ -113,11 +113,15 @@ app.get('/login', (req, res) => {
 })
 
 app.post("/urls", (req, res) => {
-  if (!req.cookies.user_id) {
+  const user_id = req.cookies.user_id;
+  if (!user_id) {
     res.redirect('/login');
   }
   const key = generateRandomString(config.key_length);
-  urlDatabase[key] = req.body.longURL;
+  urlDatabase[key] = {
+    longURL: req.body.longURL,
+    user_id,
+  }
   console.log(`added ${req.body.longURL} to database as ${key}`)
   res.redirect(`urls/${key}`);
 });
