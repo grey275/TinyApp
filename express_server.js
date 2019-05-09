@@ -30,6 +30,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+}
+
 
 const getUrlPairs = () => (
   Object.keys(urlDatabase).map(getUrlPair)
@@ -80,9 +93,9 @@ app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   if (!longURL) {
     res.status(404).send(config.not_found_msg);
-    return
+    return;
   }
-  res.status(longURL);
+  res.redirect(longURL);
 })
 
 
@@ -98,9 +111,9 @@ app.post("/urls", (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  const id = req.params.shortURL;
-  console.log(`deleting ${id}`);
-  delete urlDatabase[id];
+  const { shortURL } = req.params;
+  console.log(`deleting ${shortURL}`);
+  delete urlDatabase[shortURL];
   res.redirect('/urls');
 })
 
@@ -123,8 +136,11 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls/new');
 });
 
+app.get('/register', (req, res) => {
+  res.render('register');
+});
 
-app.get(function (req, res, next) {
+app.use(function (req, res, next) {
   res.status(404).send('Something broke!')
 })
 

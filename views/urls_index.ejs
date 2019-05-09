@@ -1,3 +1,4 @@
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -9,17 +10,14 @@
 </head>
 <body style="font-size:20px; padding:50px;">
   <%- include('./partials/_header.ejs', {username} )%>
-  -
-  <a href=<%=shortenUrlRoute%>>Click here to add a new url!</a>
-  <ul>
+  <ul class="list-group list-group-flush">
     <% for (let {longURL, shortURL, id} of urlPairs) { %>
-      <li>
-        <%- include('./partials/_link_pair.ejs', {shortURL, longURL}) %>
-        -
-        <form method="POST" action=<%= `/urls/${id}/delete` %>>
-          <button type="delete" class="btn btn-primary">Delete</button>
+      <li class="list-group-item d-inline-flex">
+        <%- include('./partials/_link_pair.ejs', {shortURL, longURL, id}) %>
+        <form class="form-inline" method="POST" action=<%= `/urls/${id}/delete` %>>
+          <button type="submit" class="btn-btn-primary">Delete</button>
         </form>
-        <form method= "GET" action=<%= `/urls/${id}` %>>
+        <form class="form-inline" method= "GET" action=<%= `/urls/${id}` %>>
           <button type="submit" class="btn btn-primary">Edit</button>
         </form>
       </li>
