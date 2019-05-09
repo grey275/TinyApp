@@ -142,6 +142,21 @@ app.post('/logout', (req, res) => {
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
+
+  // validation
+  const filledOut = !(email && password)
+
+  // checking for a collision
+  const registeredAlready = Object.values(users).filter(user => (
+    user.email === email
+  ));
+
+  // just return 400 for either
+  if (filledOut || registeredAlready) {
+    res.status(400).send();
+    return;
+  }
+
   const id = generateRandomString(6);
   users[id] = { id, email, password };
 
