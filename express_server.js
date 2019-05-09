@@ -147,9 +147,7 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  console.log(`username: ${req.body.username}`);
   console.log(`cookies: `, req.cookies);
-  res.clearCookie('username');
   res.redirect('/urls/new');
 });
 
