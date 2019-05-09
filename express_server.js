@@ -106,6 +106,10 @@ app.get('/register', (req, res) => {
   res.render('register', { user });
 });
 
+app.get('/login', (req, res) => {
+  res.render('login')
+})
+
 app.post("/urls", (req, res) => {
   const key = generateRandomString(config.key_length);
   urlDatabase[key] = req.body.longURL;
@@ -166,6 +170,12 @@ app.post('/register', (req, res) => {
 app.use(function (req, res, next) {
   res.status(404).send('Something broke!')
 })
+
+const checkIfRegistered = (email, users=users) => (
+  Object.values(users).filter(user => (
+    user.email === email
+  ))
+);
 
 
 app.listen(config.port, () => {
