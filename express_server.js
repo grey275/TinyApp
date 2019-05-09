@@ -50,7 +50,7 @@ const genUsersWithHashedPasswords = (users) => {
     const user = users[id];
     hashed[id] = {
       ...user,
-      hashedPassword: bcrypt.hashSync(user.password, 10),
+      hashedpassword: bcrypt.hashSync(user.password, 10),
     }
   }
   return hashed;
@@ -120,7 +120,10 @@ app.get('/urls', (req, res) => {
 
 app.get("/u/:shortUrl", (req, res) => {
   console.log(`shortUrl: ${req.params.shortUrl}` );
+  console.log('urlDatabase: on redirect: ', urlDatabase);
+
   const longUrl = urlDatabase[req.params.shortUrl].longUrl;
+  console.log(longUrl);
   if (!longUrl) {
     res.status(404).send(config.not_found_msg);
     return;
@@ -208,7 +211,7 @@ app.post('/register', (req, res) => {
   const id = generateRandomString(6);
   const hashedPassword = bcrypt.hashSync(password, 10);
 
-  usersHashed[id] = { id, email, password };
+  usersHashed[id] = { id, email, hashedPassword };
 
   res.cookie('user_id', id);
   res.redirect('/urls');
@@ -230,10 +233,10 @@ const urlsForUser = (user_id, database) => {
   return filtered;
 }
 
-const findUserWithEmail = (email, users) => {
-  for (let id in users) {
-    const user = users[id];
-    if (user.email = email) {
+const findUserWithEmail = (email, u) => {
+  for (let id in u) {
+    const user = u[id];
+    if (user.email === email) {
       return user;
     }
   }
