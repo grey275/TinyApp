@@ -1,7 +1,8 @@
 const express = require("express");
 const bodyParser = require('body-parser');
-const methodOverride = require('method-override')
 const cookieParser = require('cookie-parser');
+const methodOverride = require('method-override')
+const bcrypt = require('bcrypt');
 
 const morgan = require('morgan');
 
@@ -30,7 +31,7 @@ const urlDatabase = {
   i3BoGr: { longUrl: "https://www.google.ca", user_id: "aJ48lW", id:"i3BoGr" }
 };
 
-const users = {
+const usersUnhashed = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
@@ -42,6 +43,20 @@ const users = {
     password: "dishwasher-funk"
   }
 }
+
+const genUsersWithHashedPasswords = (users) => {
+  const hashed = {};
+  for (let id in users) {
+    const user = users[id];
+    hashed[id] = {
+      ...user,
+      hashedPassword: bcrypt.hashSync(user.password, 10),
+    }
+  }
+  return hashed;
+}
+
+const usersHashed = genUsersWithHashedPasswords(usersUnhashed);
 
 
 const getUrlPair = key => {
@@ -57,16 +72,26 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = users[req.cookies.user_id]
+  const user = usersHashed[req.cookies.user_id]
+  if (!user) {
+    res.redirect('/login');
+  }
   res.render("urls_new", { user });
 });
 
 app.get("/urls/:shortUrl", (req, res) => {
-  console.log('shortUrl', req.params.shortUrl)
-  console.log('db entry: ', urlDatabase[req.params.shortUrl]);
+  const user = usersHashed[req.cookies.user_id]
+  const shortUrl = req.params.shortUrl;
+  if (!user) {
+    res.redirect('/login');
+  }
+  if (urlDatabase[shortUrl].user_id !== user.id) {
+    res.status(403).send();
+  }
+
   const templateVars  = {
-    ...urlDatabase[req.params.shortUrl],
-    user: users[req.cookies.user_id],
+    ...urlDatabase[shortUrl],
+    user,
     domain_name: config.domain_name,
   };
   res.render("urls_show", templateVars);
@@ -74,7 +99,7 @@ app.get("/urls/:shortUrl", (req, res) => {
 
 
 app.get('/urls', (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = usersHashed[req.cookies.user_id];
   console.log('user: ', user);
   if (!user) {
     res.redirect('/login');
@@ -109,7 +134,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = usersHashed[req.cookies.user_id];
   res.render('register', { user });
 });
 
@@ -181,7 +206,9 @@ app.post('/register', (req, res) => {
   }
 
   const id = generateRandomString(6);
-  users[id] = { id, email, password };
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  usersHashed[id] = { id, email, password };
 
   res.cookie('user_id', id);
   res.redirect('/urls');
@@ -218,13 +245,14 @@ const findUserWithEmail = (email, users) => {
 and if they are return the user obj */
 const login = (email, password) => {
   console.log('email: ', email, 'password: ', password);
-  console.log('users in login', users);
-  const user = findUserWithEmail(email, users);
+  console.log('users in login', usersHashed);
+  const user = findUserWithEmail(email, usersHashed);
   console.log('found user: ', user);
-  if (!user || user.password !== password) {
-    return false;
+  console.log('found hashedPassword: ', user.hashedPassword);
+  if (user && bcrypt.compareSync(password, user.hashedPassword)) {
+    return user;
   }
-  return user;
+  return false;
 }
 
 app.listen(config.port, () => {
