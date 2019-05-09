@@ -9,7 +9,7 @@
   <title>TinyApp</title>
 </head>
 <body style="font-size:20px; padding:50px;">
-  <%- include('./partials/_header.ejs', {username} )%>
+  <% include ./partials/_header %>
   <ul class="list-group list-group-flush">
     <% for (let {longURL, shortURL, id} of urlPairs) { %>
       <li class="list-group-item d-inline-flex">
