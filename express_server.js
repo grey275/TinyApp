@@ -113,6 +113,9 @@ app.get('/login', (req, res) => {
 })
 
 app.post("/urls", (req, res) => {
+  if (!req.cookies.user_id) {
+    res.redirect('/login');
+  }
   const key = generateRandomString(config.key_length);
   urlDatabase[key] = req.body.longURL;
   console.log(`added ${req.body.longURL} to database as ${key}`)
