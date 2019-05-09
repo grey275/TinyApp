@@ -1,7 +1,7 @@
 <div class="navbar navbar-light bg-light d-flex p-2">
   <h1 class="title">TinyApp</h1>
-  <% if (username) { %>
-    <%= `Signed in as ${username}` %>
+  <% if (user) { %>
+    <%= `Signed in as ${user.email}` %>
     <form class="form-inline" action="/logout" method="POST">
       <div class="form-group mb-2">
         <button type="submit" class="btn btn-primary">Log Out
@@ -12,7 +12,7 @@
     <form class="form-inline fg2" action="/login" method="POST">
       <div class="form-group small">
         <label for="longURL">Sign in:</label>
-        <input class="form-control-sm d-inline-flex" type="text" name="username" placeholder="john doe" style="width: 300px; margin: 1em">
+        <input class="form-control-sm d-inline-flex" type="text" name="username" placeholder="email" style="width: 300px; margin: 1em">
         <button type="submit" class="btn btn-primary">Log In</button>
       </div>
     </form>
