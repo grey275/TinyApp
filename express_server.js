@@ -8,7 +8,6 @@ const morgan = require('morgan');
 const generateRandomString = require('./random_string');
 
 const app = express();
-const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
 
@@ -21,9 +20,10 @@ app.use(bodyParser.json());
 const config = {
   not_found_msg: 'sorry, that page doesn\'t exist!',
   key_length: 6,
+  user_id_length: 6,
+  port: 8080,
   domain_name: 'localhost:8080',
 }
-
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -103,6 +103,10 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+app.get('/register', (req, res) => {
+  res.render('register');
+});
+
 app.post("/urls", (req, res) => {
   const key = generateRandomString(config.key_length);
   urlDatabase[key] = req.body.longURL;
@@ -136,8 +140,13 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls/new');
 });
 
-app.get('/register', (req, res) => {
-  res.render('register');
+app.post('/register', (req, res) => {
+  const { email, password } = req.body;
+  const id = generateRandomString(6);
+  users[id] = { id, email, password };
+
+  res.cookie('user_id', id);
+  res.redirect('/urls');
 });
 
 app.use(function (req, res, next) {
@@ -145,6 +154,6 @@ app.use(function (req, res, next) {
 })
 
 
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}!`);
+app.listen(config.port, () => {
+  console.log(`Listening on port ${config.port}!`);
 });
