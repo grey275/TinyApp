@@ -26,8 +26,8 @@ const config = {
 }
 
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  b6UTxQ: { longUrl: "https://www.tsn.ca", user_id: "userRandomID", id:"b6UTxQ" },
+  i3BoGr: { longUrl: "https://www.google.ca", user_id: "aJ48lW", id:"i3BoGr" }
 };
 
 const users = {
@@ -44,16 +44,11 @@ const users = {
 }
 
 
-const getUrlPairs = () => (
-  Object.keys(urlDatabase).map(getUrlPair)
-);
-
-
 const getUrlPair = key => {
-  const longURL = urlDatabase[key].longURL;
-  const shortURL = `${config.domain_name}/u/${key}`;
+  const longUrl = urlDatabase[key].longUrl;
+  const shortUrl = `${config.domain_name}/u/${key}`;
   console.log(`key: ${key}`)
-  return {longURL, shortURL, id: key};
+  return {longUrl, shortUrl, id: key};
 };
 
 
@@ -66,36 +61,46 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", { user });
 });
 
-app.get("/urls/:shortURL", (req, res) => {
+app.get("/urls/:shortUrl", (req, res) => {
+  console.log('shortUrl', req.params.shortUrl)
+  console.log('db entry: ', urlDatabase[req.params.shortUrl]);
   const templateVars  = {
-    ...getUrlPair(req.params.shortURL),
+    ...urlDatabase[req.params.shortUrl],
     user: users[req.cookies.user_id],
+    domain_name: config.domain_name,
   };
   res.render("urls_show", templateVars);
 });
 
 
 app.get('/urls', (req, res) => {
-  const urlPairs = getUrlPairs();
   const user = users[req.cookies.user_id];
   console.log('user: ', user);
+  if (!user) {
+    res.redirect('/login');
+    return;
+  }
+
+  const usersUrls = urlsForUser(user.id, urlDatabase);
+  console.log('usersUrls: ', usersUrls);
   const templateVars = {
-    urlPairs,
+    usersUrls,
     shortenUrlRoute: '/urls/new',
     user,
+    domain_name: config.domain_name
   };
 
   res.render('urls_index', templateVars);
 });
 
-app.get("/u/:shortURL", (req, res) => {
-  console.log(`shortURL: ${req.params.shortURL}` );
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  if (!longURL) {
+app.get("/u/:shortUrl", (req, res) => {
+  console.log(`shortUrl: ${req.params.shortUrl}` );
+  const longUrl = urlDatabase[req.params.shortUrl].longUrl;
+  if (!longUrl) {
     res.status(404).send(config.not_found_msg);
     return;
   }
-  res.redirect(longURL);
+  res.redirect(longUrl);
 })
 
 
@@ -117,24 +122,25 @@ app.post("/urls", (req, res) => {
   if (!user_id) {
     res.redirect('/login');
   }
-  const key = generateRandomString(config.key_length);
-  urlDatabase[key] = {
-    longURL: req.body.longURL,
+  const id = generateRandomString(config.key_length);
+  urlDatabase[id] = {
+    longUrl: req.body.longUrl,
     user_id,
+    id,
   }
-  console.log(`added ${req.body.longURL} to database as ${key}`)
-  res.redirect(`urls/${key}`);
+  console.log(`added ${req.body.longUrl} to database as ${id}`)
+  res.redirect(`urls/${id}`);
 });
 
-app.post('/urls/:shortURL/delete', (req, res) => {
-  const { shortURL } = req.params;
-  console.log(`deleting ${shortURL}`);
-  delete urlDatabase[shortURL];
+app.post('/urls/:shortUrl/delete', (req, res) => {
+  const { shortUrl } = req.params;
+  console.log(`deleting ${shortUrl}`);
+  delete urlDatabase[shortUrl];
   res.redirect('/urls');
 })
 
-app.post('/urls/:shortURL', (req, res) => {
-  const id = req.params.shortURL;
+app.post('/urls/:shortUrl', (req, res) => {
+  const id = req.params.shortUrl;
   console.log(`modifying ${id}`);
 })
 
@@ -185,6 +191,18 @@ app.use(function (req, res, next) {
   res.status(404).send('Something broke!')
 })
 
+const urlsForUser = (user_id, database) => {
+  console.log('input database: ', database);
+  const filtered = {};
+  for (let key in database) {
+    const url_user_id = database[key].user_id;
+    if (user_id === url_user_id) {
+      filtered[key] = database[key];
+    }
+  }
+  return filtered;
+}
+
 const findUserWithEmail = (email, users) => {
   for (let id in users) {
     const user = users[id];
@@ -194,6 +212,7 @@ const findUserWithEmail = (email, users) => {
   }
   return false;
 };
+
 
 /* check if credentials are good,
 and if they are return the user obj */

@@ -11,9 +11,9 @@
 <body style="font-size:20px; padding:50px;">
   <% include ./partials/_header %>
   <ul class="list-group list-group-flush">
-    <% for (let {longURL, shortURL, id} of urlPairs) { %>
+    <% for (let { id, longUrl } of Object.values(usersUrls)) { %>
       <li class="list-group-item d-inline-flex">
-        <%- include('./partials/_link_pair.ejs', {shortURL, longURL, id}) %>
+        <%- include("./partials/_link_pair.ejs", { longUrl, id }) %>
         <form class="form-inline" method="POST" action=<%= `/urls/${id}/delete` %>>
           <button type="submit" class="btn-btn-primary">Delete</button>
         </form>
