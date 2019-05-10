@@ -54,7 +54,7 @@ const genUsersWithHashedPasswords = (users) => {
     const user = users[id];
     hashed[id] = {
       ...user,
-      hashedpassword: bcrypt.hashSync(user.password, 10),
+      hashedPassword: bcrypt.hashSync(user.password, 10),
     }
   }
   return hashed;
@@ -84,13 +84,18 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortUrl", (req, res) => {
+  console.log('top of route')
   const user = usersHashed[req.session.user_id]
   const shortUrl = req.params.shortUrl;
   if (!user) {
     res.redirect('/login');
+    return;
   }
+  console.log(shortUrl)
   if (urlDatabase[shortUrl].user_id !== user.id) {
+    console.log(`${urlDatabase[shortUrl].user_id} !== ${user.id}`)
     res.status(403).send();
+    return;
   }
 
   const templateVars  = {
@@ -98,6 +103,7 @@ app.get("/urls/:shortUrl", (req, res) => {
     user,
     domain_name: config.domain_name,
   };
+  console.log('bottom of route')
   res.render("urls_show", templateVars);
 });
 
@@ -174,8 +180,8 @@ app.post('/urls/:shortUrl/delete', (req, res) => {
 })
 
 app.post('/urls/:shortUrl', (req, res) => {
-  const id = req.params.shortUrl;
-  console.log(`modifying ${id}`);
+  urlDatabase[req.params.shortUrl].longUrl = req.body.longUrl;
+  res.redirect(`/urls/${shortUrl}`)
 })
 
 app.post('/login', (req, res) => {
@@ -189,6 +195,7 @@ app.post('/login', (req, res) => {
     res.status(403).send();
     return;
   }
+  req.session.user_id = user.id
   res.redirect('/urls');
 });
 
