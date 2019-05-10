@@ -1,6 +1,6 @@
 const express = require("express");
 const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const methodOverride = require('method-override')
 const bcrypt = require('bcrypt');
 
@@ -12,7 +12,11 @@ const app = express();
 
 app.set('view engine', 'ejs');
 
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key'],
+}));
+
 app.use(morgan('tiny'));
 app.use(methodOverride());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -72,7 +76,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = usersHashed[req.cookies.user_id]
+  const user = usersHashed[req.session.user_id]
   if (!user) {
     res.redirect('/login');
   }
@@ -80,7 +84,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortUrl", (req, res) => {
-  const user = usersHashed[req.cookies.user_id]
+  const user = usersHashed[req.session.user_id]
   const shortUrl = req.params.shortUrl;
   if (!user) {
     res.redirect('/login');
@@ -99,9 +103,11 @@ app.get("/urls/:shortUrl", (req, res) => {
 
 
 app.get('/urls', (req, res) => {
-  const user = usersHashed[req.cookies.user_id];
+  const user = usersHashed[req.session.user_id];
+  console.log('user_id: ', req.session.user_id);
   console.log('user: ', user);
   if (!user) {
+    console.log('no cookie set: ', req.session.user_id)
     res.redirect('/login');
     return;
   }
@@ -137,7 +143,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  const user = usersHashed[req.cookies.user_id];
+  const user = usersHashed[req.session.user_id];
   res.render('register', { user });
 });
 
@@ -146,7 +152,7 @@ app.get('/login', (req, res) => {
 })
 
 app.post("/urls", (req, res) => {
-  const user_id = req.cookies.user_id;
+  const user_id = req.session.user_id;
   if (!user_id) {
     res.redirect('/login');
   }
@@ -173,7 +179,7 @@ app.post('/urls/:shortUrl', (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-  console.log(`cookies on login: `, req.cookies);
+  console.log(`cookies on login: `, req.session);
 
   const { email, password } = req.body;
 
@@ -183,13 +189,12 @@ app.post('/login', (req, res) => {
     res.status(403).send();
     return;
   }
-  res.cookie('user_id', user.id);
   res.redirect('/urls');
 });
 
 app.post('/logout', (req, res) => {
-  console.log(`cookies: `, req.cookies);
-  res.clearCookie('user_id');
+  console.log(`cookies: `, req.session);
+  req.session.user_id = undefined;
   res.redirect('/urls/new');
 });
 
@@ -213,7 +218,8 @@ app.post('/register', (req, res) => {
 
   usersHashed[id] = { id, email, hashedPassword };
 
-  res.cookie('user_id', id);
+  req.session.user_id = id;
+  console.log('hitting here');
   res.redirect('/urls');
 });
 
