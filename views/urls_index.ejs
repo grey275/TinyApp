@@ -1,29 +1,27 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-  <title>TinyApp</title>
-</head>
-<body style="font-size:20px; padding:50px;">
-  <% include ./partials/_header %>
-  <ul class="list-group list-group-flush">
-    <% for (let { id, longUrl } of Object.values(usersUrls)) { %>
-      <li class="list-group-item d-inline-flex">
-        <%- include("./partials/_link_pair.ejs", { longUrl, id }) %>
-        <form class="form-inline" method="POST" action=<%= `/urls/${id}/delete` %>>
-          <button type="submit" class="btn-btn-primary">Delete</button>
-        </form>
-        <form class="form-inline" method= "GET" action=<%= `/urls/${id}` %>>
-          <button type="submit" class="btn btn-primary">Edit</button>
-        </form>
-      </li>
-  <% } %>
-  </ul>
-
-
-</body>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <title>TinyApp</title>
+  </head>
+  <body style="font-size:20px; padding:50px;">
+    <% include ./partials/_header %>
+    <ul class="list-group list-group-flush">
+      <% for (let { id, longUrl } of Object.values(usersUrls)) { %>
+        <li class="list-group-item d-inline-flex">
+          <%- include("./partials/_link_pair.ejs", { longUrl, id }) %>
+          <form class="form-inline" method="POST" action=<%= `/urls/${id}/delete` %>>
+            <button type="submit" class="btn-btn-primary">Delete</button>
+          </form>
+          <form class="form-inline" method= "GET" action=<%= `/urls/${id}` %>>
+            <button type="submit" class="btn btn-primary">Edit</button>
+          </form>
+        </li>
+    <% } %>
+    </ul>
+  </body>
 </html>

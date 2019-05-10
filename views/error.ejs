@@ -6,21 +6,12 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-
-    <title>New URL - TinyApp Example</title>
+    <title>TinyApp</title>
   </head>
-
   <body style="font-size:20px; padding:50px;">
-
-    <% include partials/_header %>
-
-    <h3>Create TinyURL</h3>
-    <form class="form-inline" action="/urls" method="POST">
-      <div class="form-group mb-2">
-        <label for="longUrl">Enter a URL:</label>
-        <input class="form-control" type="text" name="longUrl" default="http://" style="width: 300px; margin: 1em">
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </div>
-    </form>
+    <% include ./partials/_header %>
+    <h3>
+      <%= errMsg %>
+    <h3>
   </body>
 </html>

@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const methodOverride = require('method-override')
 const bcrypt = require('bcrypt');
+const queryString = require('query-string');
 
 const morgan = require('morgan');
 
@@ -18,7 +19,7 @@ app.use(cookieSession({
 }));
 
 app.use(morgan('tiny'));
-app.use(methodOverride());
+// app.use(methodOverride());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
@@ -28,6 +29,18 @@ const config = {
   user_id_length: 6,
   port: 8080,
   domain_name: 'localhost:8080',
+}
+
+const errorMsgs = {
+  urlNotFound: shortUrl => `Url with key '${shortUrl}' not found!`,
+  notFound: (url) => `page '${url}' does not exist!`,
+  logInToEdit: () => `You need to be logged in to edit urls!`,
+}
+
+const sendErrorMessage = (res, errMsg) => {
+  console.log('errMsg: ', errMsg);
+  const qstring = queryString.stringify(errMsg);
+  res.redirect('/error?' + qstring);
 }
 
 const urlDatabase = {
@@ -76,25 +89,45 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = usersHashed[req.session.user_id]
+  const user = usersHashed[req.session.user_id];
   if (!user) {
     res.redirect('/login');
+    return;
   }
   res.render("urls_new", { user });
+});
+
+app.get('/error', (req, res) => {
+  console.log(`error routee!`)
+  const err = req.query.errMsg;
+  console.log('errmsg: ', err);
+  res.status(404);
+  const templateVars = {
+    user: usersHashed[req.session.user_id],
+    errMsg: req.query.errMsg,
+  }
+  res.render('error', templateVars);
 });
 
 app.get("/urls/:shortUrl", (req, res) => {
   console.log('top of route')
   const user = usersHashed[req.session.user_id]
   const shortUrl = req.params.shortUrl;
+  console.log('shortUrl: ', shortUrl)
+  console.log('urlDatabase: ', urlDatabase);
+  console.log('urlDatabase[shortUrl]: ', urlDatabase[shortUrl])
+
   if (!user) {
-    res.redirect('/login');
+    sendErrorMessage(res, errorMsgs.logInToEdit);
     return;
   }
-  console.log(shortUrl)
-  if (urlDatabase[shortUrl].user_id !== user.id) {
-    console.log(`${urlDatabase[shortUrl].user_id} !== ${user.id}`)
-    res.status(403).send();
+
+  if (!urlDatabase[shortUrl] || (urlDatabase[shortUrl].user_id !== user.id)) {
+    console.log('redirecting to /error!');
+    const qstring = queryString.stringify({
+      errMsg: errorMsgs.urlNotFound(shortUrl)
+    });
+    res.redirect('/error/?' + qstring);
     return;
   }
 
@@ -106,7 +139,6 @@ app.get("/urls/:shortUrl", (req, res) => {
   console.log('bottom of route')
   res.render("urls_show", templateVars);
 });
-
 
 app.get('/urls', (req, res) => {
   const user = usersHashed[req.session.user_id];
@@ -121,6 +153,7 @@ app.get('/urls', (req, res) => {
   const usersUrls = urlsForUser(user.id, urlDatabase);
   console.log('usersUrls: ', usersUrls);
   const templateVars = {
+    displayHomeButton: false,
     usersUrls,
     shortenUrlRoute: '/urls/new',
     user,
@@ -131,15 +164,15 @@ app.get('/urls', (req, res) => {
 });
 
 app.get("/u/:shortUrl", (req, res) => {
-  console.log(`shortUrl: ${req.params.shortUrl}` );
-  console.log('urlDatabase: on redirect: ', urlDatabase);
-
-  const longUrl = urlDatabase[req.params.shortUrl].longUrl;
-  console.log(longUrl);
+  console.log('test: ', req.params)
+  const shortUrl = req.params.shortUrl
+  const longUrl = urlDatabase[shortUrl].longUrl;
   if (!longUrl) {
-    res.status(404).send(config.not_found_msg);
+    console.log(`no key for ${longUrl} found`);
+    // sendErrorMessage(res, errorMsgs.urlNotFound(shortUrl));
     return;
   }
+  console.log('redirecting to ', longUrl);
   res.redirect(longUrl);
 })
 
@@ -154,8 +187,9 @@ app.get('/register', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('login')
-})
+  const user = usersHashed[req.session.user_id];
+  res.render('login', { user });
+});
 
 app.post("/urls", (req, res) => {
   const user_id = req.session.user_id;
@@ -173,6 +207,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post('/urls/:shortUrl/delete', (req, res) => {
+  console.log('del req obj: ', req);
   const { shortUrl } = req.params;
   console.log(`deleting ${shortUrl}`);
   delete urlDatabase[shortUrl];
@@ -180,8 +215,9 @@ app.post('/urls/:shortUrl/delete', (req, res) => {
 })
 
 app.post('/urls/:shortUrl', (req, res) => {
+  console.log('database in /urls/:shorturl:', urlDatabase);
   urlDatabase[req.params.shortUrl].longUrl = req.body.longUrl;
-  res.redirect(`/urls/${shortUrl}`)
+  res.redirect(`/urls/${req.params.shortUrl}`)
 })
 
 app.post('/login', (req, res) => {
@@ -231,7 +267,7 @@ app.post('/register', (req, res) => {
 });
 
 app.use(function (req, res, next) {
-  res.status(404).send('Something broke!')
+  sendErrorMessage(res, errorMsgs.notFound);
 })
 
 const urlsForUser = (user_id, database) => {
