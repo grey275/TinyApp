@@ -31,9 +31,15 @@ const errors = {
   })
 }
 
-const sendErrorMessage = (res, err) => {
+const sendErrorMessage = (res, err, user) => {
   const qstring = queryString.stringify(err);
-  res.redirect('/error?' + qstring);
+
+  const templateVars = {
+    ...err,
+    user
+  }
+  res.status(err.code);
+  res.render('error', templateVars);
 }
 
 module.exports = {

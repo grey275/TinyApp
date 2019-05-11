@@ -24,8 +24,6 @@ app.use(bodyParser.json());
 
 
 const config = {
-  moment_format: 'hh:mm:ss a',
-  not_found_msg: 'sorry, that page doesn\'t exist!',
   key_length: 6,
   user_id_length: 6,
   port: Number(process.argv[2]) || 8080,
@@ -98,11 +96,11 @@ app.get("/urls/:shortUrl", (req, res) => {
   const user = users[req.session.user_id]
   const shortUrl = req.params.shortUrl;
   if (!user) {
-    sendErrorMessage(res, errors.logInToEdit());
+    sendErrorMessage(res, errors.logInToEdit(), user);
     return;
   }
   if (!urlDatabase[shortUrl] || (urlDatabase[shortUrl].user_id !== user.id)) {
-    sendErrorMessage(errors.urlNotFound(shortUrl))
+    sendErrorMessage(res, errors.urlNotFound(shortUrl), user)
     return;
   }
 
@@ -117,7 +115,7 @@ app.get("/urls/:shortUrl", (req, res) => {
 app.get('/urls', (req, res) => {
   const user = users[req.session.user_id];
   if (!user) {
-    sendErrorMessage(res, errors.logInToView());
+    sendErrorMessage(res, errors.logInToView(), user);
     return;
   }
   const usersUrls = urlsForUser(user.id, urlDatabase);
@@ -135,7 +133,7 @@ app.get("/u/:shortUrl", (req, res) => {
   const shortUrl = req.params.shortUrl
   const urlObj = urlDatabase[shortUrl];
   if (!urlObj) {
-    sendErrorMessage(res, errors.urlNotFound(shortUrl));
+    sendErrorMessage(res, errors.urlNotFound(shortUrl), users[req.session.user_id]);
     return;
   }
 
@@ -180,7 +178,7 @@ app.post('/urls/:shortUrl/delete', (req, res) => {
   const { shortUrl } = req.params;
   const user_id = req.session.user_id
   if (user_id !== urlDatabase[shortUrl].user_id) {
-    sendErrorMessage(res, errors.invalidCreds());
+    sendErrorMessage(res, errors.invalidCreds(), users[user_id]);
     return;
   }
   delete urlDatabase[shortUrl];
@@ -192,7 +190,7 @@ app.post('/urls/:shortUrl', (req, res) => {
   const { shortUrl } = req.params;
   const user_id = req.session.user_id
   if (user_id !== urlDatabase[shortUrl].user_id) {
-    sendErrorMessage(res, errors.invalidCreds());
+    sendErrorMessage(res, errors.invalidCreds(), users[user_id]);
     return;
   }
   urlDatabase[shortUrl].longUrl = req.body.longUrl;
@@ -203,12 +201,12 @@ app.post('/login', (req, res) => {
   const { email, password } = req.body;
 
   if (!(email && password)) {
-    sendErrorMessage(res, errors.notFilledOut())
+    sendErrorMessage(res, errors.notFilledOut(), null)
     return;
   }
   const user = login(email, password)
   if (!user) {
-    sendErrorMessage(res, errors.invalidCreds());
+    sendErrorMessage(res, errors.invalidCreds(), user);
     return;
   }
   req.session.user_id = user.id
@@ -216,7 +214,7 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  req.session.user_id = undefined;
+  req.session.user_id = null;
   res.redirect('/urls/new');
 });
 
@@ -229,12 +227,12 @@ app.post('/register', (req, res) => {
 
   // just return 400 for either
   if (notFilledOut) {
-    sendErrorMessage(res, errors.notFilledOut());
+    sendErrorMessage(res, errors.notFilledOut(), null);
     return;
   }
 
   if (registeredAlready) {
-    sendErrorMessage(res, errors.registeredAlready(email))
+    sendErrorMessage(res, errors.registeredAlready(email), null)
     return;
   }
 
@@ -248,7 +246,7 @@ app.post('/register', (req, res) => {
 });
 
 app.use(function (req, res, next) {
-  sendErrorMessage(res, errors.notFound(req.url));
+  sendErrorMessage(res, errors.notFound(req.url), users[req.session.user_id]);
 })
 
 const urlsForUser = (user_id, database) => {
