@@ -1,11 +1,14 @@
-<span class="container">
+<td >
   <a href="/u/<%= id %>">
     <%= `${domain_name}/u/${id}` %>
   </a>
-</span>
+</td>
 
-<span class="container">
+<td>
   <a href="<%= longUrl %>">
     <%= longUrl %>
   </a>
-</span>
+</td>
+<td>
+  <small> <%= time.fromNow(); %> </small>
+</td>

@@ -8,18 +8,18 @@
   <% if (user) { %>
     <%= `Signed in as ${user.email}` %>
     <form class="form-inline" action="/logout" method="POST">
-        <button type="submit" class="btn btn-primary">Log Out
+        <button type="submit" class="btn btn-primary">Log Out</button>
         </button>
+    </form>
+    <form class="form-inline" action="/urls/new" method="GET">
+      <button type="submit" class="btn btn-primary">New Url</button>
     </form>
   <% } else { %>
     <form class="form-inline" action="/login" method="GET">
-        <button type="submit" class="btn btn-primary">Log In
+        <button type="submit" class="btn btn-primary">Log In</button>
     </form>
     <form class="form-inline" action="/register" method="GET">
-        <button type="submit" class="btn btn-primary">Register
+        <button type="submit" class="btn btn-primary">Register</button>
     </form>
   <% } %>
-  <form class="form-inline" action="/urls/new" method="GET">
-    <button type="submit" class="btn-btn-primary">New Url</button>
-  </form>
 </div>

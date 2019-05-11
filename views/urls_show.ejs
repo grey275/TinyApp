@@ -9,7 +9,12 @@
   </head>
   <body style="font-size:20px; padding:50px;">
     <% include ./partials/_header %>
-    <%- include('./partials/_link_pair', { longUrl, id }) %>
+    <table class="table">
+      <thead>
+        <%- include('./partials/_link_pair', { longUrl, id }) %>
+      </thead>
+      <tbody/>
+    </table>
 
     <form class="form-inline" action="/urls/<%= id %>" method="POST">
       <div class="form-group mb-2">

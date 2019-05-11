@@ -1,13 +1,13 @@
 const express = require("express");
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
-const methodOverride = require('method-override')
 const bcrypt = require('bcrypt');
-const queryString = require('query-string');
+const moment = require('moment');
 
 const morgan = require('morgan');
 
 const generateRandomString = require('./random_string');
+const {sendErrorMessage, errors} = require('./errors');
 
 const app = express();
 
@@ -19,11 +19,12 @@ app.use(cookieSession({
 }));
 
 app.use(morgan('tiny'));
-// app.use(methodOverride());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
+
 const config = {
+  moment_format: 'hh:mm:ss a',
   not_found_msg: 'sorry, that page doesn\'t exist!',
   key_length: 6,
   user_id_length: 6,
@@ -31,46 +32,26 @@ const config = {
   domain_name: 'localhost:8080',
 }
 
-const errorMsgs = {
-  urlNotFound: shortUrl => ({
-    msg: `Url with key '${shortUrl}' not found!`,
-    code: 404,
-  }),
-  notFound: (url) => ({
-    msg: `page '${url}' does not exist!`,
-    code: 404,
-  }),
-  logInToEdit: () => ({
-    msg: `You need to be logged in to edit urls!`,
-    code: 403,
-  }),
-  logInToView: () => ({
-    msg: `You need to be logged in to view your urls!`,
-    code: 403,
-  }),
-  notFilledOut: () => ({
-     msg: `please fill out the form!`,
-     code: 400
-    }),
-  registeredAlready: (email) => ({
-    msg: `${email} is  already registered!`,
-    code: 400,
-}),
-  invalidCreds: () => ({
-    msg: `invalid credentials!`,
-    code: 403,
-  })
-}
-
-const sendErrorMessage = (res, err) => {
-  const qstring = queryString.stringify(err);
-  res.redirect('/error?' + qstring);
-}
-
 const urlDatabase = {
-  b6UTxQ: { longUrl: "https://www.tsn.ca", user_id: "userRandomID", id:"b6UTxQ" },
-  i3BoGr: { longUrl: "https://www.google.ca", user_id: "aJ48lW", id:"i3BoGr" }
+  b6UTxQ: {
+    longUrl: "https://www.tsn.ca",
+    user_id: "userRandomID",
+    id: "b6UTxQ",
+    time: moment(),
+    hits: 0,
+  },
+  i3BoGr: {
+    longUrl: "https://www.google.ca",
+    user_id: "aJ48lW",
+    id: "i3BoGr",
+    time: moment(),
+    hits: 0,
+  }
 };
+
+const addHit = (id) => {
+  urlDatabase[id].hits++;
+}
 
 const usersUnhashed = {
   "userRandomID": {
@@ -100,16 +81,13 @@ const genUsersWithHashedPasswords = (users) => {
 const usersHashed = genUsersWithHashedPasswords(usersUnhashed);
 
 
-const getUrlPair = key => {
-  const longUrl = urlDatabase[key].longUrl;
-  const shortUrl = `${config.domain_name}/u/${key}`;
-  console.log(`key: ${key}`)
-  return {longUrl, shortUrl, id: key};
-};
-
-
 app.get("/", (req, res) => {
-  res.redirect("/urls");
+  if (req.session.user_id) {
+    res.redirect("/urls");
+    return;
+  }
+  res.redirect('/login');
+
 });
 
 app.get("/urls/new", (req, res) => {
@@ -142,16 +120,12 @@ app.get("/urls/:shortUrl", (req, res) => {
   console.log('urlDatabase[shortUrl]: ', urlDatabase[shortUrl])
 
   if (!user) {
-    sendErrorMessage(res, errorMsgs.logInToEdit());
+    sendErrorMessage(res, errors.logInToEdit());
     return;
   }
 
   if (!urlDatabase[shortUrl] || (urlDatabase[shortUrl].user_id !== user.id)) {
-    console.log('redirecting to /error!');
-    const qstring = queryString.stringify({
-      errMsg: errorMsgs.urlNotFound(shortUrl)
-    });
-    res.redirect('/error/?' + qstring);
+    sendErrorMessage(errors.urlNotFound(shortUrl))
     return;
   }
 
@@ -170,7 +144,7 @@ app.get('/urls', (req, res) => {
   console.log('user: ', user);
   if (!user) {
     console.log('no cookie set: ', req.session.user_id)
-    sendErrorMessage(res, errorMsgs.logInToView());
+    sendErrorMessage(res, errors.logInToView());
     return;
   }
 
@@ -194,9 +168,11 @@ app.get("/u/:shortUrl", (req, res) => {
   if (!urlObj) {
     console.log(`no key for ${urlObj} found`);
     console.log('shorurl: ', shortUrl)
-    sendErrorMessage(res, errorMsgs.urlNotFound(shortUrl));
+    sendErrorMessage(res, errors.urlNotFound(shortUrl));
     return;
   }
+
+  addHit(shortUrl);
   const longUrl = urlObj.longUrl;
   console.log('redirecting to ', longUrl);
   res.redirect(longUrl);
@@ -228,12 +204,14 @@ app.post("/urls", (req, res) => {
     longUrl: req.body.longUrl,
     user_id,
     id,
+    time: moment(),
   }
   console.log(`added ${req.body.longUrl} to database as ${id}`)
   res.redirect(`urls/${id}`);
 });
 
 app.post('/urls/:shortUrl/delete', (req, res) => {
+  // TODO add check for authorization
   console.log('del req obj: ', req);
   const { shortUrl } = req.params;
   console.log(`deleting ${shortUrl}`);
@@ -242,6 +220,7 @@ app.post('/urls/:shortUrl/delete', (req, res) => {
 })
 
 app.post('/urls/:shortUrl', (req, res) => {
+  // TODO add check for authorization
   console.log('database in /urls/:shorturl:', urlDatabase);
   urlDatabase[req.params.shortUrl].longUrl = req.body.longUrl;
   res.redirect(`/urls/${req.params.shortUrl}`)
@@ -253,13 +232,13 @@ app.post('/login', (req, res) => {
   const { email, password } = req.body;
 
   if (!(email && password)) {
-    sendErrorMessage(res, errorMsgs.notFilledOut())
+    sendErrorMessage(res, errors.notFilledOut())
     return;
   }
   const user = login(email, password)
   console.log('user: ', user);
   if (!user) {
-    sendErrorMessage(res, errorMsgs.invalidCreds());
+    sendErrorMessage(res, errors.invalidCreds());
     return;
   }
   req.session.user_id = user.id
@@ -283,13 +262,13 @@ app.post('/register', (req, res) => {
 
   // just return 400 for either
   if (notFilledOut ) {
-    sendErrorMessage(res, errorMsgs.notFilledOut());
+    sendErrorMessage(res, errors.notFilledOut());
     return;
   }
 
   console.log('registeredAlready: ', registeredAlready);
   if (registeredAlready) {
-    sendErrorMessage(res, errorMsgs.registeredAlready(email))
+    sendErrorMessage(res, errors.registeredAlready(email))
     return;
   }
 
@@ -304,8 +283,7 @@ app.post('/register', (req, res) => {
 });
 
 app.use(function (req, res, next) {
-  res.send('hmm');
-  // sendErrorMessage(res, errorMsgs.notFound(req.url));
+  sendErrorMessage(res, errors.notFound(req.url));
 })
 
 const urlsForUser = (user_id, database) => {
@@ -328,25 +306,18 @@ const findUserWithEmail = (email, u) => {
       return user;
     }
   }
-  return false;
+  return null;
 };
-
 
 /* check if credentials are good,
 and if they are return the user obj */
 const login = (email, password) => {
-  console.log('email: ', email, 'password: ', password);
-  console.log('users in login', usersHashed);
   const user = findUserWithEmail(email, usersHashed);
-  console.log('found user: ', user);
-  console.log('found hashedPassword: ', user.hashedPassword);
   if (user && bcrypt.compareSync(password, user.hashedPassword)) {
     return user;
   }
-  return false;
+  return null;
 }
-
-console.log(findUserWithEmail('user@example.com', usersHashed));
 
 app.listen(config.port, () => {
   console.log(`Listening on port ${config.port}!`);
