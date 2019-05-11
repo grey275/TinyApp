@@ -1,5 +1,3 @@
-const queryString = require('query-string');
-
 const errors = {
   urlNotFound: shortUrl => ({
     msg: `Url with key '${shortUrl}' not found!`,
@@ -32,8 +30,6 @@ const errors = {
 }
 
 const sendErrorMessage = (res, err, user) => {
-  const qstring = queryString.stringify(err);
-
   const templateVars = {
     ...err,
     user
