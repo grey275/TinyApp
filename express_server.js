@@ -189,12 +189,17 @@ app.post('/urls/:shortUrl', (req, res) => {
   // TODO add check for authorization
   const { shortUrl } = req.params;
   const user_id = req.session.user_id
+  if (!urlDatabase[shortUrl]) {
+    sendErrorMessage(res, errors.urlNotFound(shortUrl), users[user_id])
+    return;
+  }
+
   if (user_id !== urlDatabase[shortUrl].user_id) {
     sendErrorMessage(res, errors.invalidCreds(), users[user_id]);
     return;
   }
   urlDatabase[shortUrl].longUrl = req.body.longUrl;
-  res.redirect(`/urls/${shortUrl}`)
+  res.redirect(`/urls/`)
 })
 
 app.post('/login', (req, res) => {
