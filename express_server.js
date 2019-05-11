@@ -28,7 +28,7 @@ const config = {
   not_found_msg: 'sorry, that page doesn\'t exist!',
   key_length: 6,
   user_id_length: 6,
-  port: 8080,
+  port: Number(process.argv[2]) || 8080,
   domain_name: 'localhost:8080',
 }
 
