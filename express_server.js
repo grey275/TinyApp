@@ -32,14 +32,38 @@ const config = {
 }
 
 const errorMsgs = {
-  urlNotFound: shortUrl => `Url with key '${shortUrl}' not found!`,
-  notFound: (url) => `page '${url}' does not exist!`,
-  logInToEdit: () => `You need to be logged in to edit urls!`,
+  urlNotFound: shortUrl => ({
+    msg: `Url with key '${shortUrl}' not found!`,
+    code: 404,
+  }),
+  notFound: (url) => ({
+    msg: `page '${url}' does not exist!`,
+    code: 404,
+  }),
+  logInToEdit: () => ({
+    msg: `You need to be logged in to edit urls!`,
+    code: 403,
+  }),
+  logInToView: () => ({
+    msg: `You need to be logged in to view your urls!`,
+    code: 403,
+  }),
+  notFilledOut: () => ({
+     msg: `please fill out the form!`,
+     code: 400
+    }),
+  registeredAlready: (email) => ({
+    msg: `${email} is  already registered!`,
+    code: 400,
+}),
+  invalidCreds: () => ({
+    msg: `invalid credentials!`,
+    code: 403,
+  })
 }
 
-const sendErrorMessage = (res, errMsg) => {
-  console.log('errMsg: ', errMsg);
-  const qstring = queryString.stringify(errMsg);
+const sendErrorMessage = (res, err) => {
+  const qstring = queryString.stringify(err);
   res.redirect('/error?' + qstring);
 }
 
@@ -98,14 +122,14 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get('/error', (req, res) => {
-  console.log(`error routee!`)
-  const err = req.query.errMsg;
-  console.log('errmsg: ', err);
-  res.status(404);
+  console.log(`error route!`)
+
+  const { msg, code } = req.query;
   const templateVars = {
     user: usersHashed[req.session.user_id],
-    errMsg: req.query.errMsg,
+    msg,
   }
+  res.status(code);
   res.render('error', templateVars);
 });
 
@@ -118,7 +142,7 @@ app.get("/urls/:shortUrl", (req, res) => {
   console.log('urlDatabase[shortUrl]: ', urlDatabase[shortUrl])
 
   if (!user) {
-    sendErrorMessage(res, errorMsgs.logInToEdit);
+    sendErrorMessage(res, errorMsgs.logInToEdit());
     return;
   }
 
@@ -146,7 +170,7 @@ app.get('/urls', (req, res) => {
   console.log('user: ', user);
   if (!user) {
     console.log('no cookie set: ', req.session.user_id)
-    res.redirect('/login');
+    sendErrorMessage(res, errorMsgs.logInToView());
     return;
   }
 
@@ -166,12 +190,14 @@ app.get('/urls', (req, res) => {
 app.get("/u/:shortUrl", (req, res) => {
   console.log('test: ', req.params)
   const shortUrl = req.params.shortUrl
-  const longUrl = urlDatabase[shortUrl].longUrl;
-  if (!longUrl) {
-    console.log(`no key for ${longUrl} found`);
-    // sendErrorMessage(res, errorMsgs.urlNotFound(shortUrl));
+  const urlObj = urlDatabase[shortUrl];
+  if (!urlObj) {
+    console.log(`no key for ${urlObj} found`);
+    console.log('shorurl: ', shortUrl)
+    sendErrorMessage(res, errorMsgs.urlNotFound(shortUrl));
     return;
   }
+  const longUrl = urlObj.longUrl;
   console.log('redirecting to ', longUrl);
   res.redirect(longUrl);
 })
@@ -195,6 +221,7 @@ app.post("/urls", (req, res) => {
   const user_id = req.session.user_id;
   if (!user_id) {
     res.redirect('/login');
+    return;
   }
   const id = generateRandomString(config.key_length);
   urlDatabase[id] = {
@@ -225,10 +252,14 @@ app.post('/login', (req, res) => {
 
   const { email, password } = req.body;
 
+  if (!(email && password)) {
+    sendErrorMessage(res, errorMsgs.notFilledOut())
+    return;
+  }
   const user = login(email, password)
   console.log('user: ', user);
   if (!user) {
-    res.status(403).send();
+    sendErrorMessage(res, errorMsgs.invalidCreds());
     return;
   }
   req.session.user_id = user.id
@@ -245,14 +276,20 @@ app.post('/register', (req, res) => {
   const { email, password } = req.body;
 
   // validation
-  const filledOut = !(email && password)
+  const notFilledOut = !(email && password)
 
   // checking for a collision
-  const registeredAlready = Boolean(findUserWithEmail(email));
+  const registeredAlready = Boolean(findUserWithEmail(email, usersHashed));
 
   // just return 400 for either
-  if (filledOut || registeredAlready) {
-    res.status(400).send();
+  if (notFilledOut ) {
+    sendErrorMessage(res, errorMsgs.notFilledOut());
+    return;
+  }
+
+  console.log('registeredAlready: ', registeredAlready);
+  if (registeredAlready) {
+    sendErrorMessage(res, errorMsgs.registeredAlready(email))
     return;
   }
 
@@ -267,7 +304,8 @@ app.post('/register', (req, res) => {
 });
 
 app.use(function (req, res, next) {
-  sendErrorMessage(res, errorMsgs.notFound);
+  res.send('hmm');
+  // sendErrorMessage(res, errorMsgs.notFound(req.url));
 })
 
 const urlsForUser = (user_id, database) => {
@@ -285,6 +323,7 @@ const urlsForUser = (user_id, database) => {
 const findUserWithEmail = (email, u) => {
   for (let id in u) {
     const user = u[id];
+    console.log(email, 'and', user.email)
     if (user.email === email) {
       return user;
     }
@@ -306,6 +345,8 @@ const login = (email, password) => {
   }
   return false;
 }
+
+console.log(findUserWithEmail('user@example.com', usersHashed));
 
 app.listen(config.port, () => {
   console.log(`Listening on port ${config.port}!`);
