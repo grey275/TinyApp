@@ -49,37 +49,22 @@ const urlDatabase = {
   }
 };
 
-const addHit = (id) => {
+const addUrlHit = (id) => {
   urlDatabase[id].hits++;
 }
 
-const usersUnhashed = {
+const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    hashedPassword: bcrypt.hashSync("purple-monkey-dinosaur", 10),
   },
  "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    hashedPassword: bcrypt.hashSync("dishwasher-funk", 10),
   }
 }
-
-const genUsersWithHashedPasswords = (users) => {
-  const hashed = {};
-  for (let id in users) {
-    const user = users[id];
-    hashed[id] = {
-      ...user,
-      hashedPassword: bcrypt.hashSync(user.password, 10),
-    }
-  }
-  return hashed;
-}
-
-const usersHashed = genUsersWithHashedPasswords(usersUnhashed);
-
 
 app.get("/", (req, res) => {
   if (req.session.user_id) {
@@ -91,7 +76,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = usersHashed[req.session.user_id];
+  const user = users[req.session.user_id];
   if (!user) {
     res.redirect('/login');
     return;
@@ -100,11 +85,9 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get('/error', (req, res) => {
-  console.log(`error route!`)
-
   const { msg, code } = req.query;
   const templateVars = {
-    user: usersHashed[req.session.user_id],
+    user: users[req.session.user_id],
     msg,
   }
   res.status(code);
@@ -112,18 +95,12 @@ app.get('/error', (req, res) => {
 });
 
 app.get("/urls/:shortUrl", (req, res) => {
-  console.log('top of route')
-  const user = usersHashed[req.session.user_id]
+  const user = users[req.session.user_id]
   const shortUrl = req.params.shortUrl;
-  console.log('shortUrl: ', shortUrl)
-  console.log('urlDatabase: ', urlDatabase);
-  console.log('urlDatabase[shortUrl]: ', urlDatabase[shortUrl])
-
   if (!user) {
     sendErrorMessage(res, errors.logInToEdit());
     return;
   }
-
   if (!urlDatabase[shortUrl] || (urlDatabase[shortUrl].user_id !== user.id)) {
     sendErrorMessage(errors.urlNotFound(shortUrl))
     return;
@@ -134,22 +111,16 @@ app.get("/urls/:shortUrl", (req, res) => {
     user,
     domain_name: config.domain_name,
   };
-  console.log('bottom of route')
   res.render("urls_show", templateVars);
 });
 
 app.get('/urls', (req, res) => {
-  const user = usersHashed[req.session.user_id];
-  console.log('user_id: ', req.session.user_id);
-  console.log('user: ', user);
+  const user = users[req.session.user_id];
   if (!user) {
-    console.log('no cookie set: ', req.session.user_id)
     sendErrorMessage(res, errors.logInToView());
     return;
   }
-
   const usersUrls = urlsForUser(user.id, urlDatabase);
-  console.log('usersUrls: ', usersUrls);
   const templateVars = {
     displayHomeButton: false,
     usersUrls,
@@ -157,24 +128,19 @@ app.get('/urls', (req, res) => {
     user,
     domain_name: config.domain_name
   };
-
   res.render('urls_index', templateVars);
 });
 
 app.get("/u/:shortUrl", (req, res) => {
-  console.log('test: ', req.params)
   const shortUrl = req.params.shortUrl
   const urlObj = urlDatabase[shortUrl];
   if (!urlObj) {
-    console.log(`no key for ${urlObj} found`);
-    console.log('shorurl: ', shortUrl)
     sendErrorMessage(res, errors.urlNotFound(shortUrl));
     return;
   }
 
-  addHit(shortUrl);
+  addUrlHit(shortUrl);
   const longUrl = urlObj.longUrl;
-  console.log('redirecting to ', longUrl);
   res.redirect(longUrl);
 })
 
@@ -184,12 +150,12 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  const user = usersHashed[req.session.user_id];
+  const user = users[req.session.user_id];
   res.render('register', { user });
 });
 
 app.get('/login', (req, res) => {
-  const user = usersHashed[req.session.user_id];
+  const user = users[req.session.user_id];
   res.render('login', { user });
 });
 
@@ -206,13 +172,11 @@ app.post("/urls", (req, res) => {
     id,
     time: moment(),
   }
-  console.log(`added ${req.body.longUrl} to database as ${id}`)
   res.redirect(`urls/${id}`);
 });
 
 app.post('/urls/:shortUrl/delete', (req, res) => {
   // TODO add check for authorization
-  console.log('del req obj: ', req);
   const { shortUrl } = req.params;
   const user_id = req.session.user_id
   if (user_id !== urlDatabase[shortUrl].user_id) {
@@ -220,9 +184,8 @@ app.post('/urls/:shortUrl/delete', (req, res) => {
     return;
   }
   delete urlDatabase[shortUrl];
-  console.log(`deleting ${shortUrl}`);
   res.redirect('/urls');
-})
+});
 
 app.post('/urls/:shortUrl', (req, res) => {
   // TODO add check for authorization
@@ -237,8 +200,6 @@ app.post('/urls/:shortUrl', (req, res) => {
 })
 
 app.post('/login', (req, res) => {
-  console.log(`cookies on login: `, req.session);
-
   const { email, password } = req.body;
 
   if (!(email && password)) {
@@ -246,7 +207,6 @@ app.post('/login', (req, res) => {
     return;
   }
   const user = login(email, password)
-  console.log('user: ', user);
   if (!user) {
     sendErrorMessage(res, errors.invalidCreds());
     return;
@@ -256,7 +216,6 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  console.log(`cookies: `, req.session);
   req.session.user_id = undefined;
   res.redirect('/urls/new');
 });
@@ -266,7 +225,7 @@ app.post('/register', (req, res) => {
   const notFilledOut = !(email && password)
 
   // checking for a collision
-  const registeredAlready = Boolean(findUserWithEmail(email, usersHashed));
+  const registeredAlready = Boolean(findUserWithEmail(email, users));
 
   // just return 400 for either
   if (notFilledOut) {
@@ -274,7 +233,6 @@ app.post('/register', (req, res) => {
     return;
   }
 
-  console.log('registeredAlready: ', registeredAlready);
   if (registeredAlready) {
     sendErrorMessage(res, errors.registeredAlready(email))
     return;
@@ -283,10 +241,9 @@ app.post('/register', (req, res) => {
   const id = generateRandomString(6);
   const hashedPassword = bcrypt.hashSync(password, 10);
 
-  usersHashed[id] = { id, email, hashedPassword };
+  users[id] = { id, email, hashedPassword };
 
   req.session.user_id = id;
-  console.log('hitting here');
   res.redirect('/urls');
 });
 
@@ -295,7 +252,6 @@ app.use(function (req, res, next) {
 })
 
 const urlsForUser = (user_id, database) => {
-  console.log('input database: ', database);
   const filtered = {};
   for (let key in database) {
     const url_user_id = database[key].user_id;
@@ -309,7 +265,6 @@ const urlsForUser = (user_id, database) => {
 const findUserWithEmail = (email, u) => {
   for (let id in u) {
     const user = u[id];
-    console.log(email, 'and', user.email)
     if (user.email === email) {
       return user;
     }
@@ -320,7 +275,7 @@ const findUserWithEmail = (email, u) => {
 /* check if credentials are good,
 and if they are return the user obj */
 const login = (email, password) => {
-  const user = findUserWithEmail(email, usersHashed);
+  const user = findUserWithEmail(email, users);
   if (user && bcrypt.compareSync(password, user.hashedPassword)) {
     return user;
   }
