@@ -214,16 +214,26 @@ app.post('/urls/:shortUrl/delete', (req, res) => {
   // TODO add check for authorization
   console.log('del req obj: ', req);
   const { shortUrl } = req.params;
-  console.log(`deleting ${shortUrl}`);
+  const user_id = req.session.user_id
+  if (user_id !== urlDatabase[shortUrl].user_id) {
+    sendErrorMessage(res, errors.invalidCreds());
+    return;
+  }
   delete urlDatabase[shortUrl];
+  console.log(`deleting ${shortUrl}`);
   res.redirect('/urls');
 })
 
 app.post('/urls/:shortUrl', (req, res) => {
   // TODO add check for authorization
-  console.log('database in /urls/:shorturl:', urlDatabase);
-  urlDatabase[req.params.shortUrl].longUrl = req.body.longUrl;
-  res.redirect(`/urls/${req.params.shortUrl}`)
+  const { shortUrl } = req.params;
+  const user_id = req.session.user_id
+  if (user_id !== urlDatabase[shortUrl].user_id) {
+    sendErrorMessage(res, errors.invalidCreds());
+    return;
+  }
+  urlDatabase[shortUrl].longUrl = req.body.longUrl;
+  res.redirect(`/urls/${shortUrl}`)
 })
 
 app.post('/login', (req, res) => {
@@ -253,15 +263,13 @@ app.post('/logout', (req, res) => {
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
-
-  // validation
   const notFilledOut = !(email && password)
 
   // checking for a collision
   const registeredAlready = Boolean(findUserWithEmail(email, usersHashed));
 
   // just return 400 for either
-  if (notFilledOut ) {
+  if (notFilledOut) {
     sendErrorMessage(res, errors.notFilledOut());
     return;
   }
